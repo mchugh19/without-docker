@@ -30,7 +30,7 @@ Saltstack contributor
 - Docker runs as a root service and is accessed through an api/socket (bypasses audit tracing, and complicates service management)
 - Containers run without cgroup limits and with default capabilities
 - Difficult to leverage additional namespacing
-- Upstream hostile to integration
+- Upstream hostile to integration (improving with OCI)
 - Partial support for running non-root
 
 ---
