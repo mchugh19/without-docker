@@ -127,7 +127,7 @@ drwxr-xr-x 1 1502347264 1502347264   90 Jan 28 20:52 var
 # Podman Summary
 `alias docker=podman`
 
-```
+```none
 podman pull nginx
 podman images
 podman run -dt --rm -p 1080:80 nginx # run as unprivileged user!
@@ -192,7 +192,7 @@ If we only care about an application (or two), why bother with a full linux file
 
 [simple go webapp](assets/helloweb.go)
 
-```
+```none
 newcontainer=$(buildah from scratch)
 scratchmnt=$(buildah mount $newcontainer)
 cp helloweb $scratchmnt
@@ -205,7 +205,7 @@ buildah config --cmd /helloweb $newcontainer
 buildah commit $newcontainer webimage
 ```
 
-```
+```none
 # podman images
 REPOSITORY                          TAG      IMAGE ID       CREATED        SIZE
 localhost/webimage                 latest   7d2f7bd28fe5   6 hours ago    6.51 MB
@@ -216,14 +216,14 @@ localhost/webimage                 latest   7d2f7bd28fe5   6 hours ago    6.51 M
 # Running buildah image
 
 Run as unprivileged user (mapped port needs to be above 1024)
-```
+```none
 # podman run -t --rm -p 1088:88 webimage
 
 # curl localhost:1088/dockerers
 Hey, dockerers!
 ```
 
-```
+```none
 # ps -ef
 ...
 xian     22546 12397  0 14:29 pts/4    00:00:00 podman run -t --rm -p 1088:88 webimage
