@@ -1,0 +1,12 @@
+[Unit]
+Description=Blueiris Server
+After=vnc.service
+
+[Service]
+Environment=DISPLAY=:0
+Environment=TZ=UTC
+Restart=always
+ExecStart=wine "/root/.wine/drive_c/Program Files/Blue Iris 5/BlueIris.exe"
+
+[Install]
+WantedBy=multi-user.target

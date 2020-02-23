@@ -1,0 +1,21 @@
+@import 'default';
+/* @theme custom */
+
+section {
+    background: #123;
+    color: #a9a9a9;
+}
+
+h1 {
+    color: #969393
+}
+
+section.podman {
+    background: #123;
+    background: linear-gradient(0deg, #123 99%, rgb(142, 0, 27) 100%, rgb(205, 0, 39) 50%);
+
+}
+section.nspawn {
+    background: #123;
+    background: linear-gradient(0deg, #123 99%, rgb(0, 0, 128) 100%, rgb(0, 48, 146) 50%);
+}

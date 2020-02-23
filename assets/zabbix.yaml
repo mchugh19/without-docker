@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2020-02-23T09:12:30Z"
+  labels:
+    app: zabpod
+  name: zabpod
+spec:
+  containers:
+  - command:
+    - /usr/sbin/zabbix_agentd
+    - --foreground
+    - -c
+    - /etc/zabbix/zabbix_agentd.conf
+    env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - name: TERM
+      value: xterm
+    - name: ZBX_HOSTNAME
+      value: zabbix-server
+    - name: ZBX_SERVER_HOST
+      value: localhost
+    - name: HOSTNAME
+      value: zabbix-agent
+    image: docker.io/zabbix/zabbix-agent:latest
+    name: zabbix-agent
+    ports:
+    - containerPort: 10051
+      hostPort: 10051
+      protocol: TCP
+    - containerPort: 80
+      hostPort: 85
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsGroup: 1000
+      runAsUser: 1000
+    workingDir: /var/lib/zabbix
+  - env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/default-jvm/bin/
+    - name: TERM
+      value: xterm
+    - name: ZBX_ADD_SERVER
+      value: "true"
+    - name: DB_SERVER_HOST
+      value: localhost
+    - name: ZBX_DB_TYPE
+      value: mysql
+    - name: MYSQL_ALLOW_EMPTY_PASSWORD
+      value: "true"
+    - name: ZBX_OPT_TYPE
+      value: nginx
+    - name: ZBX_JAVAGATEWAY_ENABLE
+      value: "false"
+    - name: MIBS
+      value: +ALL
+    - name: ZBX_TYPE
+      value: appliance
+    - name: ZBX_JAVAGATEWAY
+      value: localhost
+    - name: MIBDIRS
+      value: /usr/share/snmp/mibs:/var/lib/zabbix/mibs
+    - name: ZBX_ADD_WEB
+      value: "true"
+    - name: MYSQL_USER
+      value: zabbix
+    - name: JAVA_HOME
+      value: /usr/lib/jvm/default-jvm
+    - name: ZBX_ADD_JAVA_GATEWAY
+      value: "false"
+    - name: HOSTNAME
+      value: zabbix-server
+    image: docker.io/zabbix/zabbix-appliance:latest
+    name: zabbix
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsGroup: 1000
+      runAsUser: 1000
+    workingDir: /var/lib/zabbix
+status: {}

@@ -1,0 +1,13 @@
+[Unit]
+Description=VNC Server
+After=xvfb.service
+
+[Service]
+Environment=DISPLAY=:0
+Restart=always
+# Replace this with x0vncserver from TigerVNC in Ubuntu 18.04.
+# Set password by running `sudo x11vnc -storepasswd [PASSWORD] /etc/x11vnc.passwd`
+ExecStart=/usr/bin/x11vnc -forever -loop -noxdamage -repeat -rfbauth /root/.vnc/passwd -rfbport 5900 -shared
+
+[Install]
+WantedBy=multi-user.target
