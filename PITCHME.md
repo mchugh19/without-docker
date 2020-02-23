@@ -31,6 +31,7 @@ Saltstack contributor
 - Containers run without cgroup limits and with default capabilities
 - Difficult to leverage additional namespacing
 - Upstream hostile to integration
+- Partial support for running non-root
 
 ---
 
@@ -57,11 +58,11 @@ Services inside the nspawn container can be managed like any other
 
 # nspawn wine container
 
-[Example service files](assets/blueiris/)
+Example service files: [blueiris](assets/blueiris.service) [vnc](assets/vnc.service) [xvfb](assets/xvfb.service)
 `machinectl start blueiris`
 `journalctl -M blueiris -u blueiris`
 
-```
+```none
 # systemctl -M blueiris status blueiris
 ● blueiris.service - Blueiris Server
    Loaded: loaded (/etc/systemd/system/blueiris.service; enabled; vendor preset: enabled)
@@ -87,7 +88,7 @@ In addition to OCI images (extracted tar files with overlayfs directories), nspa
 When you don't need robust version artifacts, this offers significantly less overhead.
 
 
-```
+```none
 # ls -l /var/lib/machines/blueiris/
 drwxr-xr-x 1 1502347264 1502347264    0 Nov 10 12:17 boot
 drwxr-xr-x 1 1502347264 1502347264  128 Jan 28 20:51 dev
@@ -108,10 +109,17 @@ drwxr-xr-x 1 1502347264 1502347264   90 Jan 28 20:52 var
 
 # Podman
 
-Uses fork/exec
-Integration with systemd
-Supports sd_notify
-Socket activation
+- Uses fork/exec
+- Integration with systemd. (Configures needed directory and cgroup mounts)
+  ```
+  FROM fedora
+  RUN dnf -y install httpd; dnf clean all; systemctl enable httpd
+  EXPOSE 80
+  CMD [ "/sbin/init" ]
+  ```
+- Supports sd_notify
+- Socket activation
+- Generate systemd unit files `podman generate systemd --name foo`
 
 ---
 <!-- _class: podman -->
@@ -140,14 +148,27 @@ There is [a project](https://github.com/containers/podman-compose) to allow podm
 ---
 <!-- _class: podman -->
 
-# Kubernetes deployment files
+# Generating deployment files
 
-This is an example of running two containers (Zabbix server and agent) which are able to communicate with each other.
-![width:500px](assets/zabbix.png)
+Example running two containers (Zabbix server and agent) which are able to communicate with each other, with ports connected to the outside.
+```
+# podman pod create -n zabpod -p 10051:10051 -p 85:80
+# podman run --name zabbix --pod zabpod -d zabbix/zabbix-appliance
+# podman run --name zabbix-agent --pod zabpod -e ZBX_HOSTNAME="zabbix-server" -e ZBX_SERVER_HOST="localhost" -d zabbix/zabbix-agent
+```
 
 Generate a kubernetes deployment manifest
 ` podman generate kube zabpod > zabbix.yaml`
+
 [zabbix.yaml](assets/zabbix.yaml)
+
+---
+<!-- _class: podman -->
+
+# Kubernetes deployment files
+
+It works!
+![width:500px](assets/zabbix.png)
 
 Processes are running as my user
 `xian     19152 19133  0 09:19 ?        00:00:00 /usr/sbin/zabbix_agentd --foreground -c /etc/zabbix/zabbix_ag`
@@ -194,7 +215,7 @@ localhost/webimage                 latest   7d2f7bd28fe5   6 hours ago    6.51 M
 
 # Running buildah image
 
-Run as unprivileged user
+Run as unprivileged user (mapped port needs to be above 1024)
 ```
 # podman run -t --rm -p 1088:88 webimage
 
