@@ -26,8 +26,8 @@ Saltstack contributor
 
 ---
 
-# Concerns
-- Docker runs as a root service and is accessed through an api/socket (bypasses audit tracing, and complicates service management)
+# Why not docker?
+- Docker runs as a root service and is accessed through an api/socket -- bypasses audit tracing, and complicates service management
 - Containers run without cgroup limits and with default capabilities
 - Difficult to leverage additional namespacing
 - Upstream hostile to integration (improving with OCI)
@@ -124,7 +124,7 @@ drwxr-xr-x 1 1502347264 1502347264   90 Jan 28 20:52 var
 ---
 <!-- _class: podman -->
 
-# Podman Summary
+# Podman summary
 `alias docker=podman`
 
 ```none
@@ -134,6 +134,31 @@ podman run -dt --rm -p 1080:80 nginx # run as unprivileged user!
 podman ps
 podman rm 3cd983c74719
 podman rmi nginx
+```
+
+---
+
+<!-- _class: podman -->
+
+# Systemd unit generation
+
+Generate command creates unit files for easy service management
+`podman generate systemd --name foo`
+```
+[Unit]
+Description=Podman container-foo.service
+Documentation=man:podman-generate-systemd(1)
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/bin/podman start foo
+ExecStop=/usr/bin/podman stop -t 10 foo
+KillMode=none
+Type=forking
+PIDFile=/run/user/1000/overlay-containers/5597/userdata/conmon.pid
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ---
@@ -167,6 +192,8 @@ Generate a kubernetes deployment manifest
 
 # Kubernetes deployment files
 
+`podman play kube zabbix.yaml`
+
 It works!
 ![width:500px](assets/zabbix.png)
 
@@ -174,12 +201,42 @@ Processes are running as my user
 `xian     19152 19133  0 09:19 ?        00:00:00 /usr/sbin/zabbix_agentd --foreground -c /etc/zabbix/zabbix_ag`
 
 ---
+
 <!-- _class: podman -->
 
-# Container filesystems
+# Container namespaces
 
 What separates a container from a VM?
 A container doesn't run a kernel. What we call containers are processes running inside of linux namespaces, possibly restricted by bpf programs and cgroup limits.
+
+Namespaces include: pid, user, network, uts (hostname), ipc, and cgroup, with time in development (CRIU).
+
+---
+<!-- _class: podman -->
+
+# Container rootless user mapping
+
+```
+# podman top 76f5a778
+USER   PID   PPID   %CPU    COMMAND
+1000   1     0      0.000   /sbin/tini -- /usr/bin/docker-entrypoint.sh /usr/sbin/zabbix_agentd --foreground -c /etc/zabbix/zabbix_agentd.conf
+1000   8     1      0.000   /usr/sbin/zabbix_agentd --foreground -c /etc/zabbix/zabbix_agentd.conf
+1000   67    8      0.000   /usr/sbin/zabbix_agentd: collector [idle 1 sec]
+1000   68    8      0.000   /usr/sbin/zabbix_agentd: listener #1 [waiting for connection]
+1000   69    8      0.000   /usr/sbin/zabbix_agentd: active checks #1 [idle 1 sec]
+```
+
+User namespaces are controlled by `/etc/setuid` & `/etc/setgid`. If you have a map of username:10,000:5,000 then uid 1 will be 10,001, uid 100 will be 10,100.
+
+So a process running inside the container at uid 100 which needs to access the filesystem outside the container, will need to have that file accessible by uid 10,100.
+
+Podman and systemd-nspawn automatically `chown -R` as needed, but there's additional overlayfs metadata fanciness to come.
+
+---
+
+# Creating containers
+
+<!-- _class:podman -->
 
 If we only care about an application (or two), why bother with a full linux filesystem, application, and library stack.
 
@@ -210,6 +267,8 @@ buildah commit $newcontainer webimage
 REPOSITORY                          TAG      IMAGE ID       CREATED        SIZE
 localhost/webimage                 latest   7d2f7bd28fe5   6 hours ago    6.51 MB
 ```
+helloweb 6.3M binary, image is 6.51M
+
 ---
 <!-- _class: podman -->
 
